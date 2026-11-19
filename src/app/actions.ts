@@ -39,24 +39,32 @@ export async function adminLogout() {
 
 export async function savePost(formData: FormData) {
   const id = Number(formData.get("id"));
+  const title = String(formData.get("title") ?? "").trim();
+  const baseSlug = title.toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "chapter";
+  let slug = baseSlug;
+  let suffix = 2;
+  while (true) {
+    const matches = await db.select({ id: posts.id }).from(posts).where(eq(posts.slug, slug)).limit(1);
+    if (!matches[0] || matches[0].id === id) break;
+    slug = `${baseSlug}-${suffix}`;
+    suffix += 1;
+  }
   const values = {
-    slug: String(formData.get("slug") ?? "").trim(),
+    slug,
     position: Number(formData.get("position")),
-    title: String(formData.get("title") ?? "").trim(),
-    topic: String(formData.get("topic") ?? "").trim(),
-    hook: String(formData.get("hook") ?? "").trim(),
+    title,
     body: String(formData.get("body") ?? "").trim(),
-    isFree: formData.get("isFree") === "on",
   };
   if (id) await db.update(posts).set(values).where(eq(posts.id, id));
   else await db.insert(posts).values(values);
-  redirect(`/${await getAdminPath()}?saved=1`);
+  redirect(`/${await getAdminPath()}/chapters?saved=1`);
 }
 
 export async function deletePost(formData: FormData) {
   const id = Number(formData.get("id"));
   if (id) await db.delete(posts).where(eq(posts.id, id));
-  redirect(`/${await getAdminPath()}?saved=1`);
+  redirect(`/${await getAdminPath()}/chapters?saved=1`);
 }
 
 export async function updateAdminPath(formData: FormData) {

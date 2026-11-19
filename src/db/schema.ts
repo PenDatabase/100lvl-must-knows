@@ -1,14 +1,11 @@
-import { boolean, integer, pgTable, serial, text, timestamp } from "drizzle-orm/pg-core";
+import { integer, pgTable, serial, text, timestamp } from "drizzle-orm/pg-core";
 
 export const posts = pgTable("posts", {
   id: serial("id").primaryKey(),
   slug: text("slug").notNull().unique(),
   position: integer("position").notNull().unique(), // reading order: 1, 2, 3...
   title: text("title").notNull(),
-  topic: text("topic").notNull(),
-  hook: text("hook").notNull(),
-  body: text("body").notNull(), // paragraphs separated by a blank line
-  isFree: boolean("is_free").notNull().default(false),
+  body: text("body").notNull(), // Markdown source
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

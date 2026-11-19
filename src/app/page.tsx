@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { asc, eq } from "drizzle-orm";
+import { asc, lte } from "drizzle-orm";
 import { db } from "@/db";
 import { posts, settings } from "@/db/schema";
 import { BRAND, NAME } from "@/site";
@@ -14,7 +14,7 @@ const proof = [
 ];
 
 export default async function Home() {
-  const free = await db.select().from(posts).where(eq(posts.isFree, true)).orderBy(asc(posts.position));
+  const free = await db.select().from(posts).where(lte(posts.position, 3)).orderBy(asc(posts.position));
   const siteSettings = await db.select().from(settings);
   const setting = (key: string) => siteSettings.find((item) => item.key === key)?.value;
   const personalMessage = setting("PERSONAL_MESSAGE") ||
@@ -73,7 +73,7 @@ export default async function Home() {
           <p className="section-kicker">Read in order</p>
           <h2>The first 3 chapters are free.</h2>
           <ol className="chapters">
-            {free.map((p) => <li key={p.id}><Link href={`/blog/${p.slug}`}><span className="num">{p.position}</span><span><b>{p.title}</b><em>{p.hook}</em></span><span className="tag">Free</span></Link></li>)}
+            {free.map((p) => <li key={p.id}><Link href={`/blog/${p.slug}`}><span className="num">{p.position}</span><span><b>{p.title}</b></span><span className="tag">Free</span></Link></li>)}
           </ol>
           <Link className="btn btn-accent" href="/blog">View all chapters</Link>
         </div>

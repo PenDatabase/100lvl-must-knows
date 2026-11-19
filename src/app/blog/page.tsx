@@ -15,11 +15,11 @@ export default async function Blog({ searchParams }: { searchParams: { welcome?:
       <h1 className="h-sm">All chapters</h1>
       <ol className="chapters">
         {all.map((p) => (
-          <li key={p.id} className={p.isFree ? "" : "locked"}>
-            <Link href={p.isFree ? `/blog/${p.slug}` : "/pricing"}>
+          <li key={p.id} className={p.position <= 3 ? "" : "locked"}>
+            <Link href={p.position <= 3 ? `/blog/${p.slug}` : "/pricing"}>
               <span className="num">{p.position}</span>
-              <span><b>{p.title}</b><em>{p.topic}</em></span>
-              <span className="tag">{p.isFree ? "Free" : "Locked"}</span>
+              <span><b>{p.title}</b></span>
+              <span className="tag">{p.position <= 3 ? "Free" : "Locked"}</span>
             </Link>
           </li>
         ))}
