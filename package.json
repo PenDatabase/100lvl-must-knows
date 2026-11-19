@@ -1,0 +1,27 @@
+{
+  "name": "freshman-playbook",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "db:push": "drizzle-kit push",
+    "db:seed": "tsx src/db/seed.ts"
+  },
+  "dependencies": {
+    "@neondatabase/serverless": "^0.10.4",
+    "dotenv": "^16.4.5",
+    "drizzle-orm": "^0.45.4",
+    "next": "14.2.35",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
+    "drizzle-kit": "^0.31.11",
+    "tsx": "^4.19.0",
+    "typescript": "^5"
+  }
+}

@@ -1,0 +1,37 @@
+:root {
+  --acid: #d9ff00;
+}
+
+.hero h1 {
+  font-size: clamp(3.6rem, 8vw, 6.6rem);
+  line-height: 0.9;
+}
+
+.btn:hover {
+  background: #b7d900;
+}
+
+.portrait {
+  border-left: 0;
+  transform: translateY(-6rem);
+}
+
+.letter-grid {
+  grid-template-columns: 1fr;
+}
+
+.letter-copy {
+  max-width: 48rem;
+}
+
+@media (max-width: 850px) {
+  .portrait {
+    transform: translateY(-3.5rem);
+  }
+}
+
+@media (max-width: 560px) {
+  .portrait {
+    transform: translateY(-2.75rem);
+  }
+}
