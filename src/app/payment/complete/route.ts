@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(new URL("/pricing?error=checkout", request.url));
   }
 
-  const [existingPayment] = await db.select()
+  let [existingPayment] = await db.select()
     .from(payments)
     .where(eq(payments.checkoutId, checkoutId))
     .limit(1);
@@ -81,9 +81,19 @@ export async function GET(request: NextRequest) {
   const paymentSucceeded = Boolean(
     checkout &&
     String(checkout.status).toLowerCase() === "completed" &&
-    (String(checkout.payment_status).toLowerCase() === "succeeded" ||
+    (["succeeded", "paid"].includes(String(checkout.payment_status).toLowerCase()) ||
       String(checkout.charge?.status).toLowerCase() === "succeeded")
   );
+  if (!paymentSucceeded) {
+    for (let attempt = 0; attempt < 10; attempt += 1) {
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      [existingPayment] = await db.select()
+        .from(payments)
+        .where(eq(payments.checkoutId, checkoutId))
+        .limit(1);
+      if (existingPayment && ["succeeded", "completed"].includes(existingPayment.status)) break;
+    }
+  }
   const existingPaymentSucceeded = Boolean(
     existingPayment && ["succeeded", "completed"].includes(existingPayment.status)
   );
