@@ -3,6 +3,7 @@ import { asc, lte } from "drizzle-orm";
 import { db } from "@/db";
 import { posts, settings } from "@/db/schema";
 import { BRAND, NAME } from "@/site";
+import { getCurrentUser, logout } from "@/app/actions";
 export const revalidate = 60;
 
 const proof = [
@@ -13,7 +14,10 @@ const proof = [
 ];
 
 export default async function Home() {
-  const free = await db.select().from(posts).where(lte(posts.position, 3)).orderBy(asc(posts.position));
+  const [free, user] = await Promise.all([
+    db.select().from(posts).where(lte(posts.position, 3)).orderBy(asc(posts.position)),
+    getCurrentUser(),
+  ]);
   const siteSettings = await db.select().from(settings);
   const setting = (key: string) => siteSettings.find((item) => item.key === key)?.value;
   const personalMessage = setting("PERSONAL_MESSAGE") ||
@@ -26,9 +30,19 @@ export default async function Home() {
         <header className="nav wrap">
           <Link className="brand" href="/">{BRAND}</Link>
           <nav className="nav-actions" aria-label="Account navigation">
-            <Link className="nav-link" href="/blog">Read the playbook</Link>
-            <Link className="nav-link" href="/login">Log in</Link>
-            <Link className="nav-link nav-link-accent" href="/signup">Sign up</Link>
+            {user ? (
+              <>
+                <Link className="nav-link nav-link-accent" href="/pricing">Unlock full playbook</Link>
+                <form action={logout}>
+                  <button className="nav-link nav-link-button" type="submit">Log out</button>
+                </form>
+              </>
+            ) : (
+              <>
+                <Link className="nav-link nav-link-secondary" href="/login">Log in</Link>
+                <Link className="nav-link nav-link-accent" href="/signup">Sign up</Link>
+              </>
+            )}
           </nav>
         </header>
         <div className="hero-grid wrap">

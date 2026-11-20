@@ -70,6 +70,14 @@ export async function POST(request: NextRequest) {
 
   if (event.type === "checkout.completed") {
     const data = event.data || {};
+    const paymentStatus = String(data.payment_status || "").toLowerCase();
+    const chargeSucceeded = String(data.charge?.status || "").toLowerCase();
+    const wasPaid = paymentStatus === "succeeded" ||
+      paymentStatus === "paid" ||
+      chargeSucceeded === "succeeded";
+    if (!wasPaid) {
+      return NextResponse.json({ received: true, fulfilled: false });
+    }
     const email = data.customer_details?.email || data.customer?.email || null;
     const metadataUserId = Number(data.metadata?.user_id);
     const [metadataUser] = Number.isInteger(metadataUserId) && metadataUserId > 0

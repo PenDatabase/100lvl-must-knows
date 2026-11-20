@@ -35,6 +35,28 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(new URL("/pricing?error=checkout", request.url));
   }
 
+  const [existingPayment] = await db.select()
+    .from(payments)
+    .where(eq(payments.checkoutId, checkoutId))
+    .limit(1);
+  if (existingPayment && ["succeeded", "completed"].includes(existingPayment.status)) {
+    const apiKey = process.env.BACHS_API_KEY;
+    const secret = process.env.PAYMENT_ACCESS_SECRET || process.env.BACHS_WEBHOOK_SECRET || apiKey;
+    if (secret) {
+      const value = crypto.randomBytes(24).toString("hex");
+      const signature = crypto.createHmac("sha256", secret).update(value).digest("hex");
+      const redirect = NextResponse.redirect(new URL("/payment/success", request.url));
+      redirect.cookies.set("playbook_access", `${value}.${signature}`, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        path: "/",
+        maxAge: 60 * 60 * 24 * 365,
+      });
+      return redirect;
+    }
+  }
+
   const apiKey = process.env.BACHS_API_KEY;
   if (!apiKey) return NextResponse.redirect(new URL("/pricing?error=payment-not-configured", request.url));
   const baseUrl = apiKey.startsWith("sk_sandbox_") ? "https://sandbox-api.bachs.io" : "https://api.bachs.io";
@@ -44,15 +66,18 @@ export async function GET(request: NextRequest) {
       headers: { Authorization: `Bearer ${apiKey}`, Accept: "application/json" },
       cache: "no-store",
     });
-    if (response.ok) checkout = await response.json();
+    if (response.ok) {
+      checkout = await response.json();
+    } else {
+      console.error("Bachs return verification failed", {
+        checkoutId,
+        status: response.status,
+        keyType: apiKey.startsWith("sk_sandbox_") ? "sandbox" : apiKey.startsWith("sk_live_") ? "live" : "unknown",
+      });
+    }
   } catch (error) {
     console.error("Bachs checkout verification failed", error);
   }
-
-  const [existingPayment] = await db.select()
-    .from(payments)
-    .where(eq(payments.checkoutId, checkoutId))
-    .limit(1);
   const paymentSucceeded = Boolean(
     checkout &&
     String(checkout.status).toLowerCase() === "completed" &&

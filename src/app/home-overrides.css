@@ -10,7 +10,32 @@
 .nav-actions {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: 0.65rem;
+}
+
+.nav-actions form {
+  display: flex;
+}
+
+.nav-actions .nav-link {
+  min-height: 2.5rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.45rem 0.85rem;
+  border: 1px solid var(--acid);
+}
+
+.nav-actions .nav-link-secondary {
+  background: transparent;
+  color: var(--paper);
+}
+
+.nav-actions .nav-link-button {
+  font: inherit;
+  cursor: pointer;
+  background: transparent;
+  color: var(--paper);
 }
 
 .nav-link-accent {
@@ -77,12 +102,12 @@
 
 @media (max-width: 560px) {
   .nav-actions {
-    gap: 0;
+    gap: 0.25rem;
   }
 
   .nav-actions .nav-link {
     font-size: 0.65rem;
-    padding-inline: 0.35rem;
+    padding-inline: 0.5rem;
   }
 
   .portrait {
