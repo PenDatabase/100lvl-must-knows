@@ -170,26 +170,34 @@ export async function startCheckout(formData: FormData) {
     `${requestHeaders.get("x-forwarded-proto") || "https"}://${requestHeaders.get("x-forwarded-host") || requestHeaders.get("host") || "localhost:3000"}`;
   const checkoutEmail = user?.email || email;
   const reference = `PLAYBOOK_ACCESS_${crypto.randomUUID()}`;
-  const response = await fetch(`${baseUrl}/v1/checkout-sessions`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
-    body: JSON.stringify({
-      pricing: { currency: "NGN", amount: "2000.00" },
-      customer: { email: checkoutEmail },
-      payment_method_types: ["NGN_CARD", "NGN_BANK_TRANSFER"],
-      success_url: `${origin}/payment/complete`,
-      cancel_url: `${origin}/pricing`,
-      reference,
-      metadata: { product: "100 Level Playbook", access: "full", user_id: user ? String(user.id) : "" },
-    }),
-    cache: "no-store",
-  });
-  const rawResponse = await response.text();
-  let data: { checkout_url?: string; error?: { message?: string }; message?: string } = {};
+  let response: Response;
+  let rawResponse = "";
+  try {
+    response = await fetch(`${baseUrl}/v1/checkout-sessions`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        "Idempotency-Key": reference,
+      },
+      body: JSON.stringify({
+        pricing: { currency: "NGN", amount: "2000.00" },
+        customer: { email: checkoutEmail },
+        payment_method_types: ["NGN_CARD", "NGN_BANK_TRANSFER"],
+        success_url: `${origin}/payment/complete`,
+        cancel_url: `${origin}/pricing`,
+        reference,
+        metadata: { product: "100 Level Playbook", access: "full", user_id: String(user.id) },
+      }),
+      cache: "no-store",
+    });
+    rawResponse = await response.text();
+  } catch (error) {
+    console.error("Bachs checkout request failed", error);
+    redirect("/pricing?error=checkout");
+  }
+  let data: { checkout_url?: string; checkoutUrl?: string; error?: { message?: string }; message?: string } = {};
   try { data = JSON.parse(rawResponse); } catch {}
   if (!response.ok) {
     console.error("Bachs checkout creation failed", {
@@ -197,6 +205,7 @@ export async function startCheckout(formData: FormData) {
       message: data.error?.message || data.message || rawResponse,
     });
   }
-  if (!response.ok || !data.checkout_url) redirect("/pricing?error=checkout");
-  redirect(data.checkout_url);
+  const checkoutUrl = data.checkout_url || data.checkoutUrl;
+  if (!response.ok || !checkoutUrl) redirect("/pricing?error=checkout");
+  redirect(checkoutUrl);
 }

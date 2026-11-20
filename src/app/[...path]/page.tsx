@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { cookies } from "next/headers";
 import { asc, eq } from "drizzle-orm";
 import { db } from "@/db";
-import { payments, posts, settings } from "@/db/schema";
+import { payments, posts, settings, users } from "@/db/schema";
 import {
   adminLogin,
   adminLogout,
@@ -143,6 +143,19 @@ export default async function AdminCatchAll({
   if (path !== "") notFound();
   const [personalSetting] = await db.select().from(settings).where(eq(settings.key, "PERSONAL_MESSAGE")).limit(1);
   const [imageSetting] = await db.select().from(settings).where(eq(settings.key, "PROFILE_IMAGE")).limit(1);
+  const allUsers = await db.select().from(users).orderBy(asc(users.createdAt));
+  const allPayments = await db.select().from(payments);
+  const paidUserIds = new Set(
+    allPayments
+      .filter((payment) => (payment.status === "succeeded" || payment.status === "completed") && payment.paidAt)
+      .flatMap((payment) => payment.userId ? [payment.userId] : [])
+  );
+  const paidEmails = new Set(
+    allPayments
+      .filter((payment) => (payment.status === "succeeded" || payment.status === "completed") && payment.paidAt)
+      .map((payment) => payment.email?.toLowerCase())
+      .filter((email): email is string => Boolean(email))
+  );
   return <AdminLayout adminPath={adminPath}>
     <Header title="Dashboard" saved={resolvedSearchParams.saved} />
     <section className="admin-panel"><h2>Homepage personal message</h2>
@@ -151,6 +164,20 @@ export default async function AdminCatchAll({
         <label htmlFor="profileImage">Profile image URL</label><input id="profileImage" name="profileImage" type="url" defaultValue={imageSetting?.value || ""} />
         <button className="btn" type="submit">Save homepage content</button>
       </form>
+    </section>
+    <section className="admin-panel">
+      <div className="admin-panel-heading"><h2>Users</h2><Link href={`/${adminPath}/payments`}>View payment records</Link></div>
+      <div className="admin-table-wrap"><table className="admin-table">
+        <thead><tr><th>Email</th><th>Joined</th><th>Payment</th></tr></thead>
+        <tbody>{allUsers.map((user) => {
+          const paid = paidUserIds.has(user.id) || paidEmails.has(user.email.toLowerCase());
+          return <tr key={user.id}>
+            <td>{user.email}</td>
+            <td>{user.createdAt.toLocaleDateString()}</td>
+            <td><span className={paid ? "status-paid" : "status-unpaid"}>{paid ? "Paid" : "Not paid"}</span></td>
+          </tr>;
+        })}</tbody>
+      </table></div>
     </section>
   </AdminLayout>;
 }

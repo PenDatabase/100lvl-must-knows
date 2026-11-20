@@ -25,7 +25,11 @@ export default async function Home() {
       <section className="hero">
         <header className="nav wrap">
           <Link className="brand" href="/">{BRAND}</Link>
-          <Link className="nav-link" href="/blog">Read the playbook</Link>
+          <nav className="nav-actions" aria-label="Account navigation">
+            <Link className="nav-link" href="/blog">Read the playbook</Link>
+            <Link className="nav-link" href="/login">Log in</Link>
+            <Link className="nav-link nav-link-accent" href="/signup">Sign up</Link>
+          </nav>
         </header>
         <div className="hero-grid wrap">
           <div className="hero-copy">

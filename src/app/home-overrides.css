@@ -7,6 +7,46 @@
   line-height: 0.9;
 }
 
+.nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.nav-link-accent {
+  background: var(--acid);
+  color: var(--ink);
+}
+
+.admin-panel-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.admin-panel-heading a {
+  font-weight: 800;
+}
+
+.status-paid,
+.status-unpaid {
+  display: inline-block;
+  font-size: 0.78rem;
+  font-weight: 900;
+  padding: 0.2rem 0.5rem;
+  text-transform: uppercase;
+}
+
+.status-paid {
+  background: var(--acid);
+}
+
+.status-unpaid {
+  background: var(--warm);
+  color: var(--muted);
+}
+
 .btn:hover {
   background: #b7d900;
 }
@@ -36,6 +76,15 @@
 }
 
 @media (max-width: 560px) {
+  .nav-actions {
+    gap: 0;
+  }
+
+  .nav-actions .nav-link {
+    font-size: 0.65rem;
+    padding-inline: 0.35rem;
+  }
+
   .portrait {
     transform: translateY(-2.75rem);
   }
