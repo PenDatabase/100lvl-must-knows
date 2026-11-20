@@ -4,14 +4,15 @@ import { db } from "@/db";
 import { posts } from "@/db/schema";
 import { BRAND } from "@/site";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
 
-export default async function Blog({ searchParams }: { searchParams: { welcome?: string } }) {
+export default async function Blog({ searchParams }: { searchParams: Promise<{ welcome?: string }> }) {
+  const resolvedSearchParams = await searchParams;
   const all = await db.select().from(posts).orderBy(asc(posts.position));
   return (
     <main className="wrap block">
       <nav className="page-nav"><Link href="/" className="back">{BRAND}</Link></nav>
-      {searchParams.welcome && <p className="notice">You’re in. Start at chapter 1.</p>}
+      {resolvedSearchParams.welcome && <p className="notice">You’re in. Start at chapter 1.</p>}
       <h1 className="h-sm">All chapters</h1>
       <ol className="chapters">
         {all.map((p) => (

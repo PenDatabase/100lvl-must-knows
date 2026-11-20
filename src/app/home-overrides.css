@@ -16,6 +16,11 @@
   transform: translateY(-6rem);
 }
 
+.portrait img,
+.portrait-placeholder {
+  border-radius: 10px;
+}
+
 .letter-grid {
   grid-template-columns: 1fr;
 }

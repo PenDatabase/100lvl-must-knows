@@ -3,8 +3,7 @@ import { asc, lte } from "drizzle-orm";
 import { db } from "@/db";
 import { posts, settings } from "@/db/schema";
 import { BRAND, NAME } from "@/site";
-
-export const dynamic = "force-dynamic";
+export const revalidate = 60;
 
 const proof = [
   ["First Class", "and holding it"],
@@ -19,7 +18,7 @@ export default async function Home() {
   const setting = (key: string) => siteSettings.find((item) => item.key === key)?.value;
   const personalMessage = setting("PERSONAL_MESSAGE") ||
     "Dear 100 level student,\n\nYour first year is still in your hands. Do not waste it copying everyone else's timetable, chasing certificates, or discovering in 400 level that results do not happen by accident.";
-  const profileImage = setting("PROFILE_IMAGE") || "/profile.png";
+  const profileImage = setting("PROFILE_IMAGE") || "/profile.webp";
 
   return (
     <main>
@@ -38,7 +37,7 @@ export default async function Home() {
             <Link className="btn btn-accent" href={free[0] ? `/blog/${free[0].slug}` : "/blog"}>Start Reading</Link>
           </div>
           <div className="portrait">
-            {profileImage ? <img src={profileImage} alt={NAME} /> : <div className="portrait-placeholder"><span>Add your photo</span></div>}
+            {profileImage ? <img src={profileImage} alt={NAME} width={600} height={648} decoding="async" fetchPriority="high" /> : <div className="portrait-placeholder"><span>Add your photo</span></div>}
             <p>Written by {NAME}</p>
           </div>
         </div>

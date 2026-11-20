@@ -9,8 +9,9 @@ import { renderMarkdown } from "@/lib/markdown";
 
 export const dynamic = "force-dynamic";
 
-export default async function Post({ params }: { params: { slug: string } }) {
-  const [post] = await db.select().from(posts).where(eq(posts.slug, params.slug)).limit(1);
+export default async function Post({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
+  const [post] = await db.select().from(posts).where(eq(posts.slug, slug)).limit(1);
   if (!post) notFound();
 
   const [prev] = await db.select().from(posts).where(eq(posts.position, post.position - 1));

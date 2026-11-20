@@ -69,11 +69,13 @@ export default async function AdminCatchAll({
   params,
   searchParams,
 }: {
-  params: { path: string[] };
-  searchParams: { saved?: string; error?: string };
+  params: Promise<{ path: string[] }>;
+  searchParams: Promise<{ saved?: string; error?: string }>;
 }) {
+  const resolvedParams = await params;
+  const resolvedSearchParams = await searchParams;
   const adminPath = await getAdminPath();
-  if (params.path.join("/") !== adminPath && !params.path.join("/").startsWith(`${adminPath}/`)) notFound();
+  if (resolvedParams.path.join("/") !== adminPath && !resolvedParams.path.join("/").startsWith(`${adminPath}/`)) notFound();
 
   if (!(await isAdmin())) {
     return (
@@ -86,18 +88,18 @@ export default async function AdminCatchAll({
             <input id="password" name="password" type="password" required />
             <button className="btn" type="submit">Sign in</button>
           </form>
-          {searchParams.error === "invalid" && <p className="err">Invalid password.</p>}
+          {resolvedSearchParams.error === "invalid" && <p className="err">Invalid password.</p>}
         </section>
       </main>
     );
   }
 
-  const path = params.path.slice(adminPath.split("/").length).join("/");
+  const path = resolvedParams.path.slice(adminPath.split("/").length).join("/");
   const allPosts = await db.select().from(posts).orderBy(asc(posts.position));
 
   if (path === "chapters" || path === "chapters/") {
     return <AdminLayout adminPath={adminPath}>
-      <Header title="Chapters" saved={searchParams.saved} />
+      <Header title="Chapters" saved={resolvedSearchParams.saved} />
       <div className="admin-actions"><Link className="btn" href={`/${adminPath}/chapters/new`}>Create chapter</Link></div>
       <section className="admin-panel">
         <div className="admin-table-wrap"><table className="admin-table">
@@ -121,7 +123,7 @@ export default async function AdminCatchAll({
   if (editMatch) {
     const post = allPosts.find((item) => item.id === Number(editMatch[1]));
     if (!post) notFound();
-    return <AdminLayout adminPath={adminPath}><Header title="Edit chapter" saved={searchParams.saved} /><ChapterForm post={post} nextPosition={post.position} /></AdminLayout>;
+    return <AdminLayout adminPath={adminPath}><Header title="Edit chapter" saved={resolvedSearchParams.saved} /><ChapterForm post={post} nextPosition={post.position} /></AdminLayout>;
   }
 
   if (path === "payments" || path === "payments/") {
@@ -144,7 +146,7 @@ export default async function AdminCatchAll({
   const [personalSetting] = await db.select().from(settings).where(eq(settings.key, "PERSONAL_MESSAGE")).limit(1);
   const [imageSetting] = await db.select().from(settings).where(eq(settings.key, "PROFILE_IMAGE")).limit(1);
   return <AdminLayout adminPath={adminPath}>
-    <Header title="Dashboard" saved={searchParams.saved} />
+    <Header title="Dashboard" saved={resolvedSearchParams.saved} />
     <section className="admin-panel"><h2>Site settings</h2>
       <form action={updateAdminPath} className="admin-form">
         <label htmlFor="adminPath">ADMIN_PATH</label><input id="adminPath" name="adminPath" defaultValue={adminSetting?.value || adminPath} />
