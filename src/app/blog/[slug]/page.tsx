@@ -5,27 +5,56 @@ import { db } from "@/db";
 import { payments, posts } from "@/db/schema";
 import { getCurrentUser } from "@/app/actions";
 import { renderMarkdown } from "@/lib/markdown";
+import { log, logError } from "@/lib/logger";
 
 export const dynamic = "force-dynamic";
 
 export default async function Post({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const [post] = await db.select().from(posts).where(eq(posts.slug, slug)).limit(1);
-  if (!post) notFound();
+  let post;
+  try {
+    [post] = await db.select().from(posts).where(eq(posts.slug, slug)).limit(1);
+  } catch (error) {
+    logError("chapter_load.database_failed", error, { slug });
+    throw error;
+  }
+  if (!post) {
+    log("warn", "chapter_load.not_found", { slug });
+    notFound();
+  }
 
-  const [prev] = await db.select().from(posts).where(eq(posts.position, post.position - 1));
-  const [next] = await db.select().from(posts).where(eq(posts.position, post.position + 1));
+  let prev;
+  let next;
+  try {
+    [prev] = await db.select().from(posts).where(eq(posts.position, post.position - 1));
+    [next] = await db.select().from(posts).where(eq(posts.position, post.position + 1));
+  } catch (error) {
+    logError("chapter_navigation.database_failed", error, { slug, postId: post.id });
+  }
   let hasAccess = false;
-  const user = await getCurrentUser();
+  let user;
+  try {
+    user = await getCurrentUser();
+  } catch (error) {
+    logError("chapter_access.user_lookup_failed", error, { slug });
+  }
   if (user) {
-    const [payment] = await db.select({ id: payments.id })
-      .from(payments)
-      .where(and(
-        eq(payments.userId, user.id),
-        inArray(payments.status, ["succeeded", "completed"]),
-      ))
-      .limit(1);
-    hasAccess = Boolean(payment);
+    try {
+      const [payment] = await db.select({ id: payments.id })
+        .from(payments)
+        .where(and(
+          eq(payments.userId, user.id),
+          inArray(payments.status, ["succeeded", "completed"]),
+        ))
+        .limit(1);
+      hasAccess = Boolean(payment);
+    } catch (error) {
+      logError("chapter_access.database_lookup_failed", error, {
+        slug,
+        userId: user.id,
+        email: user.email,
+      });
+    }
   }
   const isFree = post.position <= 3;
   if (!isFree && !hasAccess) redirect("/pricing");

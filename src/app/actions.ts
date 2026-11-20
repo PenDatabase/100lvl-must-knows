@@ -5,6 +5,7 @@ import { cookies, headers } from "next/headers";
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { posts, settings, users } from "@/db/schema";
+import { log, logError } from "@/lib/logger";
 
 function hashPassword(password: string) {
   const salt = crypto.randomBytes(16).toString("hex");
@@ -157,11 +158,22 @@ export async function updateHomepage(formData: FormData) {
 
 export async function startCheckout(formData: FormData) {
   const email = String(formData.get("email") ?? "").trim();
-  if (!/\S+@\S+\.\S+/.test(email)) redirect("/pricing?error=email");
+  if (!/\S+@\S+\.\S+/.test(email)) {
+    log("warn", "checkout.invalid_email");
+    redirect("/pricing?error=email");
+  }
 
   const apiKey = process.env.BACHS_API_KEY;
-  if (!apiKey) redirect("/pricing?error=payment-not-configured");
-  const user = await getCurrentUser();
+  if (!apiKey) {
+    log("error", "checkout.not_configured");
+    redirect("/pricing?error=payment-not-configured");
+  }
+  let user;
+  try {
+    user = await getCurrentUser();
+  } catch (error) {
+    logError("checkout.user_lookup_failed", error, { email });
+  }
   if (!user) redirect("/signup?next=/pricing");
   const baseUrl = apiKey.startsWith("sk_sandbox_") ? "https://sandbox-api.bachs.io" : "https://api.bachs.io";
   const requestHeaders = await headers();
@@ -170,6 +182,12 @@ export async function startCheckout(formData: FormData) {
     `${requestHeaders.get("x-forwarded-proto") || "https"}://${requestHeaders.get("x-forwarded-host") || requestHeaders.get("host") || "localhost:3000"}`;
   const checkoutEmail = user?.email || email;
   const reference = `PLAYBOOK_ACCESS_${crypto.randomUUID()}`;
+  log("info", "checkout.request_started", {
+    userId: user.id,
+    email: user.email,
+    reference,
+    providerEnvironment: apiKey.startsWith("sk_sandbox_") ? "sandbox" : apiKey.startsWith("sk_live_") ? "live" : "unknown",
+  });
   let response: Response;
   let rawResponse = "";
   try {
@@ -194,18 +212,37 @@ export async function startCheckout(formData: FormData) {
     });
     rawResponse = await response.text();
   } catch (error) {
-    console.error("Bachs checkout request failed", error);
+    logError("checkout.provider_request_failed", error, {
+      userId: user.id,
+      email: user.email,
+      reference,
+    });
     redirect("/pricing?error=checkout");
   }
   let data: { checkout_url?: string; checkoutUrl?: string; error?: { message?: string }; message?: string } = {};
   try { data = JSON.parse(rawResponse); } catch {}
   if (!response.ok) {
-    console.error("Bachs checkout creation failed", {
+    log("error", "checkout.provider_creation_failed", {
+      userId: user.id,
+      email: user.email,
+      reference,
       status: response.status,
       message: data.error?.message || data.message || rawResponse,
     });
   }
   const checkoutUrl = data.checkout_url || data.checkoutUrl;
-  if (!response.ok || !checkoutUrl) redirect("/pricing?error=checkout");
+  if (!response.ok || !checkoutUrl) {
+    log("warn", "checkout.creation_missing_redirect", {
+      userId: user.id,
+      reference,
+      status: response.ok ? "missing-url" : "provider-error",
+    });
+    redirect("/pricing?error=checkout");
+  }
+  log("info", "checkout.redirecting_to_provider", {
+    userId: user.id,
+    email: user.email,
+    reference,
+  });
   redirect(checkoutUrl);
 }
