@@ -14,8 +14,16 @@ export const settings = pgTable("settings", {
   value: text("value").notNull(),
 });
 
+export const users = pgTable("users", {
+  id: serial("id").primaryKey(),
+  email: text("email").notNull().unique(),
+  passwordHash: text("password_hash").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export const payments = pgTable("payments", {
   id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id),
   checkoutId: text("checkout_id").notNull().unique(),
   eventId: text("event_id").unique(),
   email: text("email"),

@@ -1,10 +1,81 @@
 "use server";
 import crypto from "node:crypto";
 import { redirect } from "next/navigation";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
-import { posts, settings } from "@/db/schema";
+import { posts, settings, users } from "@/db/schema";
+
+function hashPassword(password: string) {
+  const salt = crypto.randomBytes(16).toString("hex");
+  const hash = crypto.scryptSync(password, salt, 64).toString("hex");
+  return `${salt}:${hash}`;
+}
+
+function verifyPassword(password: string, encoded: string) {
+  const [salt, hash] = encoded.split(":");
+  if (!salt || !hash) return false;
+  const actual = crypto.scryptSync(password, salt, 64);
+  const expected = Buffer.from(hash, "hex");
+  return actual.length === expected.length && crypto.timingSafeEqual(actual, expected);
+}
+
+function userSessionSecret() {
+  return process.env.PAYMENT_ACCESS_SECRET || process.env.BACHS_WEBHOOK_SECRET || process.env.ADMIN_PASSWORD;
+}
+
+async function setUserSession(userId: number) {
+  const secret = userSessionSecret();
+  if (!secret) throw new Error("PAYMENT_ACCESS_SECRET is not configured");
+  const value = String(userId);
+  const signature = crypto.createHmac("sha256", secret).update(value).digest("hex");
+  const cookieStore = await cookies();
+  cookieStore.set("playbook_user", `${value}.${signature}`, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    maxAge: 60 * 60 * 24 * 365,
+  });
+}
+
+export async function getCurrentUser() {
+  const secret = userSessionSecret();
+  if (!secret) return null;
+  const cookie = (await cookies()).get("playbook_user")?.value;
+  if (!cookie) return null;
+  const [value, signature] = cookie.split(".");
+  if (!value || !signature) return null;
+  const expected = crypto.createHmac("sha256", secret).update(value).digest("hex");
+  if (signature.length !== expected.length || !crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected))) return null;
+  const [user] = await db.select().from(users).where(eq(users.id, Number(value))).limit(1);
+  return user || null;
+}
+
+export async function signup(formData: FormData) {
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  const password = String(formData.get("password") ?? "");
+  if (!/^\S+@\S+\.\S+$/.test(email) || password.length < 8) redirect("/signup?error=invalid");
+  const [existing] = await db.select({ id: users.id }).from(users).where(eq(users.email, email)).limit(1);
+  if (existing) redirect("/signup?error=email");
+  const [user] = await db.insert(users).values({ email, passwordHash: hashPassword(password) }).returning();
+  await setUserSession(user.id);
+  redirect("/pricing");
+}
+
+export async function login(formData: FormData) {
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  const password = String(formData.get("password") ?? "");
+  const [user] = await db.select().from(users).where(eq(users.email, email)).limit(1);
+  if (!user || !verifyPassword(password, user.passwordHash)) redirect("/login?error=invalid");
+  await setUserSession(user.id);
+  redirect("/pricing");
+}
+
+export async function logout() {
+  (await cookies()).delete("playbook_user");
+  redirect("/");
+}
 
 export async function getAdminPath() {
   const configuredPath = (process.env.ADMIN_PATH || "/admin")
@@ -90,8 +161,14 @@ export async function startCheckout(formData: FormData) {
 
   const apiKey = process.env.BACHS_API_KEY;
   if (!apiKey) redirect("/pricing?error=payment-not-configured");
+  const user = await getCurrentUser();
+  if (!user) redirect("/signup?next=/pricing");
   const baseUrl = apiKey.startsWith("sk_sandbox_") ? "https://sandbox-api.bachs.io" : "https://api.bachs.io";
-  const origin = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/+$/, "") || "http://localhost:3000";
+  const requestHeaders = await headers();
+  const configuredOrigin = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/+$/, "");
+  const origin = configuredOrigin ||
+    `${requestHeaders.get("x-forwarded-proto") || "https"}://${requestHeaders.get("x-forwarded-host") || requestHeaders.get("host") || "localhost:3000"}`;
+  const checkoutEmail = user?.email || email;
   const response = await fetch(`${baseUrl}/v1/checkout-sessions`, {
     method: "POST",
     headers: {
@@ -101,15 +178,24 @@ export async function startCheckout(formData: FormData) {
     },
     body: JSON.stringify({
       pricing: { currency: "NGN", amount: "2000.00" },
-      customer: { email },
+      customer: { email: checkoutEmail },
       payment_method_types: ["NGN_CARD", "NGN_BANK_TRANSFER"],
       success_url: `${origin}/payment/complete`,
       cancel_url: `${origin}/pricing`,
       reference: "PLAYBOOK_ACCESS",
-      metadata: { product: "100 Level Playbook", access: "full" },
+      metadata: { product: "100 Level Playbook", access: "full", user_id: user ? String(user.id) : "" },
     }),
+    cache: "no-store",
   });
-  const data = await response.json();
+  const rawResponse = await response.text();
+  let data: { checkout_url?: string; error?: { message?: string }; message?: string } = {};
+  try { data = JSON.parse(rawResponse); } catch {}
+  if (!response.ok) {
+    console.error("Bachs checkout creation failed", {
+      status: response.status,
+      message: data.error?.message || data.message || rawResponse,
+    });
+  }
   if (!response.ok || !data.checkout_url) redirect("/pricing?error=checkout");
   redirect(data.checkout_url);
 }

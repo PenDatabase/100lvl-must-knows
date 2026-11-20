@@ -2,6 +2,8 @@ import crypto from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { payments } from "@/db/schema";
+import { users } from "@/db/schema";
+import { eq } from "drizzle-orm";
 
 function verify(rawBody: string, request: NextRequest) {
   const secret = process.env.BACHS_WEBHOOK_SECRET;
@@ -34,8 +36,18 @@ export async function POST(request: NextRequest) {
   const event = JSON.parse(rawBody);
   if (event.type === "collection.succeeded") {
     const data = event.data || {};
+    const email = data.customer?.email || null;
+    const metadataUserId = Number(data.metadata?.user_id);
+    const [metadataUser] = Number.isInteger(metadataUserId) && metadataUserId > 0
+      ? await db.select().from(users).where(eq(users.id, metadataUserId)).limit(1)
+      : [];
+    const [emailUser] = !metadataUser && email
+      ? await db.select().from(users).where(eq(users.email, String(email).toLowerCase())).limit(1)
+      : [];
+    const user = metadataUser || emailUser;
     await db.insert(payments).values({
       checkoutId: data.checkout_id,
+      userId: user?.id || null,
       eventId: event.id,
       email: data.customer?.email || null,
       amount: data.amount || "2000.00",
@@ -45,6 +57,7 @@ export async function POST(request: NextRequest) {
     }).onConflictDoUpdate({
       target: payments.checkoutId,
       set: {
+        userId: user?.id || null,
         eventId: event.id,
         email: data.customer?.email || null,
         amount: data.amount || "2000.00",
@@ -57,10 +70,20 @@ export async function POST(request: NextRequest) {
 
   if (event.type === "checkout.completed") {
     const data = event.data || {};
+    const email = data.customer_details?.email || data.customer?.email || null;
+    const metadataUserId = Number(data.metadata?.user_id);
+    const [metadataUser] = Number.isInteger(metadataUserId) && metadataUserId > 0
+      ? await db.select().from(users).where(eq(users.id, metadataUserId)).limit(1)
+      : [];
+    const [emailUser] = !metadataUser && email
+      ? await db.select().from(users).where(eq(users.email, String(email).toLowerCase())).limit(1)
+      : [];
+    const user = metadataUser || emailUser;
     await db.insert(payments).values({
       checkoutId: data.checkout_id,
+      userId: user?.id || null,
       eventId: event.id,
-      email: data.customer_details?.email || data.customer?.email || null,
+      email,
       amount: data.amount || "2000.00",
       currency: data.currency || "NGN",
       status: "completed",
@@ -68,8 +91,9 @@ export async function POST(request: NextRequest) {
     }).onConflictDoUpdate({
       target: payments.checkoutId,
       set: {
+        userId: user?.id || null,
         eventId: event.id,
-        email: data.customer_details?.email || data.customer?.email || null,
+        email,
         amount: data.amount || "2000.00",
         currency: data.currency || "NGN",
         status: "completed",

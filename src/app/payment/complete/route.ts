@@ -2,7 +2,7 @@ import crypto from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
-import { payments } from "@/db/schema";
+import { payments, users } from "@/db/schema";
 
 export async function GET(request: NextRequest) {
   const checkoutId = request.nextUrl.searchParams.get("checkout_id");
@@ -22,8 +22,17 @@ export async function GET(request: NextRequest) {
   }
 
   const email = checkout.customer_details?.email || checkout.customer?.email || null;
+  const metadataUserId = Number(checkout.metadata?.user_id);
+  const [metadataUser] = Number.isInteger(metadataUserId) && metadataUserId > 0
+    ? await db.select().from(users).where(eq(users.id, metadataUserId)).limit(1)
+    : [];
+  const [emailUser] = !metadataUser && email
+    ? await db.select().from(users).where(eq(users.email, String(email).toLowerCase())).limit(1)
+    : [];
+  const user = metadataUser || emailUser;
   await db.insert(payments).values({
     checkoutId,
+    userId: user?.id || null,
     email,
     amount: checkout.amount || "2000.00",
     currency: checkout.currency || "NGN",
@@ -31,7 +40,7 @@ export async function GET(request: NextRequest) {
     paidAt: new Date(),
   }).onConflictDoUpdate({
     target: payments.checkoutId,
-    set: { email, amount: checkout.amount || "2000.00", currency: checkout.currency || "NGN", status: "succeeded", paidAt: new Date() },
+    set: { userId: user?.id || null, email, amount: checkout.amount || "2000.00", currency: checkout.currency || "NGN", status: "succeeded", paidAt: new Date() },
   });
 
   const secret = process.env.PAYMENT_ACCESS_SECRET || process.env.BACHS_WEBHOOK_SECRET || apiKey;

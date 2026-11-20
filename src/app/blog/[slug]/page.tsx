@@ -1,10 +1,9 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { eq } from "drizzle-orm";
-import { cookies } from "next/headers";
-import crypto from "node:crypto";
+import { and, eq, inArray } from "drizzle-orm";
 import { db } from "@/db";
-import { posts } from "@/db/schema";
+import { payments, posts } from "@/db/schema";
+import { getCurrentUser } from "@/app/actions";
 import { renderMarkdown } from "@/lib/markdown";
 
 export const dynamic = "force-dynamic";
@@ -16,16 +15,17 @@ export default async function Post({ params }: { params: Promise<{ slug: string 
 
   const [prev] = await db.select().from(posts).where(eq(posts.position, post.position - 1));
   const [next] = await db.select().from(posts).where(eq(posts.position, post.position + 1));
-  const accessCookie = (await cookies()).get("playbook_access")?.value;
   let hasAccess = false;
-  if (accessCookie) {
-    const [value, signature] = accessCookie.split(".");
-    const secret = process.env.PAYMENT_ACCESS_SECRET || process.env.BACHS_WEBHOOK_SECRET || process.env.BACHS_API_KEY;
-    if (value && signature && secret) {
-      const expected = crypto.createHmac("sha256", secret).update(value).digest("hex");
-      hasAccess = signature.length === expected.length &&
-        crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected));
-    }
+  const user = await getCurrentUser();
+  if (user) {
+    const [payment] = await db.select({ id: payments.id })
+      .from(payments)
+      .where(and(
+        eq(payments.userId, user.id),
+        inArray(payments.status, ["succeeded", "completed"]),
+      ))
+      .limit(1);
+    hasAccess = Boolean(payment);
   }
   const isFree = post.position <= 3;
   if (!isFree && !hasAccess) redirect("/pricing");
