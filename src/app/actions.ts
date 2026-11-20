@@ -169,6 +169,7 @@ export async function startCheckout(formData: FormData) {
   const origin = configuredOrigin ||
     `${requestHeaders.get("x-forwarded-proto") || "https"}://${requestHeaders.get("x-forwarded-host") || requestHeaders.get("host") || "localhost:3000"}`;
   const checkoutEmail = user?.email || email;
+  const reference = `PLAYBOOK_ACCESS_${crypto.randomUUID()}`;
   const response = await fetch(`${baseUrl}/v1/checkout-sessions`, {
     method: "POST",
     headers: {
@@ -182,7 +183,7 @@ export async function startCheckout(formData: FormData) {
       payment_method_types: ["NGN_CARD", "NGN_BANK_TRANSFER"],
       success_url: `${origin}/payment/complete`,
       cancel_url: `${origin}/pricing`,
-      reference: "PLAYBOOK_ACCESS",
+      reference,
       metadata: { product: "100 Level Playbook", access: "full", user_id: user ? String(user.id) : "" },
     }),
     cache: "no-store",
