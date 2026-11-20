@@ -22,7 +22,6 @@ const rows = [
 
 async function main() {
   await db.insert(posts).values(rows.map((r, i) => ({ ...r, position: i + 1 }))).onConflictDoNothing();
-  await db.insert(settings).values({ key: "ADMIN_PATH", value: "admin" }).onConflictDoNothing();
   await db.insert(settings).values({
     key: "PERSONAL_MESSAGE",
     value: "Dear 100 level student,\n\nYour first year is still in your hands. Do not waste it copying everyone else’s timetable, chasing certificates, or discovering in 400 level that results do not happen by accident.",

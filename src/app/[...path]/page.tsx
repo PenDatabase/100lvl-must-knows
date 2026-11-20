@@ -11,7 +11,6 @@ import {
   deletePost,
   getAdminPath,
   savePost,
-  updateAdminPath,
   updateHomepage,
 } from "@/app/actions";
 
@@ -142,17 +141,10 @@ export default async function AdminCatchAll({
   }
 
   if (path !== "") notFound();
-  const [adminSetting] = await db.select().from(settings).where(eq(settings.key, "ADMIN_PATH")).limit(1);
   const [personalSetting] = await db.select().from(settings).where(eq(settings.key, "PERSONAL_MESSAGE")).limit(1);
   const [imageSetting] = await db.select().from(settings).where(eq(settings.key, "PROFILE_IMAGE")).limit(1);
   return <AdminLayout adminPath={adminPath}>
     <Header title="Dashboard" saved={resolvedSearchParams.saved} />
-    <section className="admin-panel"><h2>Site settings</h2>
-      <form action={updateAdminPath} className="admin-form">
-        <label htmlFor="adminPath">ADMIN_PATH</label><input id="adminPath" name="adminPath" defaultValue={adminSetting?.value || adminPath} />
-        <button className="btn" type="submit">Change admin URL</button>
-      </form>
-    </section>
     <section className="admin-panel"><h2>Homepage personal message</h2>
       <form action={updateHomepage} className="admin-form">
         <label htmlFor="personalMessage">Message for readers</label><textarea id="personalMessage" name="personalMessage" rows={8} defaultValue={personalSetting?.value || ""} />

@@ -7,8 +7,11 @@ import { db } from "@/db";
 import { posts, settings } from "@/db/schema";
 
 export async function getAdminPath() {
-  const [setting] = await db.select().from(settings).where(eq(settings.key, "ADMIN_PATH")).limit(1);
-  return (setting?.value || "admin").replace(/^\/+|\/+$/g, "");
+  const configuredPath = (process.env.ADMIN_PATH || "/admin")
+    .trim()
+    .replace(/^\/+|\/+$/g, "")
+    .replace(/\s+/g, "-");
+  return configuredPath || "admin";
 }
 
 function sign(value: string) {
@@ -65,16 +68,6 @@ export async function deletePost(formData: FormData) {
   const id = Number(formData.get("id"));
   if (id) await db.delete(posts).where(eq(posts.id, id));
   redirect(`/${await getAdminPath()}/chapters?saved=1`);
-}
-
-export async function updateAdminPath(formData: FormData) {
-  const path = String(formData.get("adminPath") ?? "").trim().replace(/^\/+|\/+$/g, "").replace(/\s+/g, "-");
-  if (!path) redirect(`/${await getAdminPath()}?error=invalid`);
-  await db.update(settings).set({ value: path }).where(eq(settings.key, "ADMIN_PATH"));
-  if (!await db.select().from(settings).where(eq(settings.key, "ADMIN_PATH")).limit(1).then((rows) => rows[0])) {
-    await db.insert(settings).values({ key: "ADMIN_PATH", value: path });
-  }
-  redirect(`/${path}?saved=1`);
 }
 
 export async function updateHomepage(formData: FormData) {
