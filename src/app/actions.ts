@@ -115,6 +115,10 @@ export async function adminLogout() {
 export async function savePost(formData: FormData) {
   const id = Number(formData.get("id"));
   const title = String(formData.get("title") ?? "").trim();
+  const position = Number(formData.get("position"));
+  if (!Number.isInteger(position) || position < 1) {
+    throw new Error("Chapter position must be a positive integer.");
+  }
   const baseSlug = title.toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g, "")
     .replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "chapter";
   let slug = baseSlug;
@@ -127,12 +131,52 @@ export async function savePost(formData: FormData) {
   }
   const values = {
     slug,
-    position: Number(formData.get("position")),
+    position,
     title,
     body: String(formData.get("body") ?? "").trim(),
   };
-  if (id) await db.update(posts).set(values).where(eq(posts.id, id));
-  else await db.insert(posts).values(values);
+  const currentPosts = await db.select({ id: posts.id, position: posts.position }).from(posts);
+
+  if (id) {
+    const currentPost = currentPosts.find((post) => post.id === id);
+    if (!currentPost) throw new Error(`Chapter ${id} no longer exists.`);
+    if (currentPost.position === position) {
+      await db.update(posts).set(values).where(eq(posts.id, id));
+    } else {
+      const movingForward = currentPost.position < position;
+      const postsToShift = currentPosts
+        .filter((post) => post.id !== id && (
+          movingForward
+            ? post.position > currentPost.position && post.position <= position
+            : post.position >= position && post.position < currentPost.position
+        ))
+        .sort((a, b) => movingForward
+          ? a.position - b.position
+          : b.position - a.position);
+      const temporaryPosition = Math.min(0, ...currentPosts.map((post) => post.position)) - 1;
+      await db.batch([
+        db.update(posts).set({ position: temporaryPosition }).where(eq(posts.id, id)),
+        ...postsToShift.map((post) => db.update(posts).set({
+          position: post.position + (movingForward ? -1 : 1),
+        }).where(eq(posts.id, post.id))),
+        db.update(posts).set(values).where(eq(posts.id, id)),
+      ] as const);
+    }
+  } else {
+    const postsToShift = currentPosts
+      .filter((post) => post.position >= position)
+      .sort((a, b) => b.position - a.position);
+    const insertStatement = db.insert(posts).values(values);
+    if (postsToShift.length === 0) {
+      await insertStatement;
+    } else {
+      const [first, ...remaining] = postsToShift.map((post) => db.update(posts).set({
+        position: post.position + 1,
+      }).where(eq(posts.id, post.id)));
+      if (!first) throw new Error("Failed to prepare chapter position updates.");
+      await db.batch([first, ...remaining, insertStatement]);
+    }
+  }
   redirect(`/${await getAdminPath()}/chapters?saved=1`);
 }
 
