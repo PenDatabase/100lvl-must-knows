@@ -34,8 +34,8 @@
 .nav-actions .nav-link-button {
   font: inherit;
   cursor: pointer;
-  background: transparent;
-  color: var(--paper);
+  background: var(--warm);
+  color: var(--ink);
 }
 
 .nav-link-accent {

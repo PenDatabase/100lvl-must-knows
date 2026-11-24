@@ -10,7 +10,6 @@ export default async function Pricing({ searchParams }: { searchParams: Promise<
     <>
       <SiteNavbar />
       <main className="wrap block pricing">
-        <p className="kicker">You finished the free chapters</p>
         <section className="price-card">
           <p className="kicker">Full playbook</p>
           <h2>Unlock every chapter</h2>
