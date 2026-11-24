@@ -70,7 +70,7 @@ export async function login(formData: FormData) {
   const [user] = await db.select().from(users).where(eq(users.email, email)).limit(1);
   if (!user || !verifyPassword(password, user.passwordHash)) redirect("/login?error=invalid");
   await setUserSession(user.id);
-  redirect("/pricing");
+  redirect("/blog");
 }
 
 export async function logout() {

@@ -43,6 +43,10 @@
   color: var(--ink);
 }
 
+.chapters-heading {
+  margin-top: 2rem;
+}
+
 .admin-panel-heading {
   display: flex;
   align-items: center;

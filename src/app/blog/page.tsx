@@ -26,7 +26,7 @@ export default async function Blog({ searchParams }: { searchParams: Promise<{ w
     <main className="wrap block">
       <SiteNavbar />
       {resolvedSearchParams.welcome && <p className="notice">You’re in. Start at chapter 1.</p>}
-      <h1 className="h-sm">All chapters</h1>
+      <h1 className="h-sm chapters-heading">All chapters</h1>
       <ol className="chapters">
         {all.map((p) => (
           <li key={p.id} className={p.position <= 3 || hasAccess ? "" : "locked"}>
