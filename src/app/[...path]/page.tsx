@@ -37,6 +37,7 @@ function AdminLayout({ adminPath, children }: { adminPath: string; children: Rea
         <Link href={`/${adminPath}`}>Dashboard</Link>
         <Link href={`/${adminPath}/chapters`}>Chapters</Link>
         <Link href={`/${adminPath}/payments`}>Payments</Link>
+        <Link href={`/${adminPath}/users`}>Users</Link>
         <Link href="/blog">View site</Link>
         <form action={adminLogout}><button type="submit">Log out</button></form>
       </aside>
@@ -140,6 +141,52 @@ export default async function AdminCatchAll({
     </AdminLayout>;
   }
 
+  if (path === "users" || path === "users/") {
+    const allUsers = await db.select().from(users).orderBy(asc(users.createdAt));
+    const allPayments = await db.select().from(payments);
+    const paidUserIds = new Set(
+      allPayments
+        .filter((payment) => payment.status === "succeeded" || payment.status === "completed")
+        .flatMap((payment) => payment.userId ? [payment.userId] : [])
+    );
+    const paidEmails = new Set(
+      allPayments
+        .filter((payment) => payment.status === "succeeded" || payment.status === "completed")
+        .map((payment) => payment.email?.toLowerCase())
+        .filter((email): email is string => Boolean(email))
+    );
+
+    return <AdminLayout adminPath={adminPath}>
+      <Header title="Users" />
+      <section className="admin-panel">
+        <div className="admin-table-wrap"><table className="admin-table">
+          <thead><tr><th>Email</th><th>Joined</th><th>Payment status</th><th>Payment amount</th><th>Checkout ID</th></tr></thead>
+          <tbody>{allUsers.map((user) => {
+            const paid = paidUserIds.has(user.id) || paidEmails.has(user.email.toLowerCase());
+            const successfulPayments = allPayments
+              .filter((payment) =>
+                (payment.status === "succeeded" || payment.status === "completed") &&
+                (payment.userId === user.id || payment.email?.toLowerCase() === user.email.toLowerCase())
+              )
+              .sort((a, b) => {
+                const aTime = a.paidAt?.getTime() || a.createdAt.getTime();
+                const bTime = b.paidAt?.getTime() || b.createdAt.getTime();
+                return bTime - aTime || b.id - a.id;
+              });
+            const mostRecentPayment = successfulPayments[0];
+            return <tr key={user.id}>
+              <td>{user.email}</td>
+              <td>{user.createdAt.toLocaleDateString()}</td>
+              <td><span className={paid ? "status-paid" : "status-unpaid"}>{paid ? "Paid" : "Not paid"}</span></td>
+              <td>{mostRecentPayment ? `${mostRecentPayment.currency} ${mostRecentPayment.amount}` : "-"}</td>
+              <td>{mostRecentPayment?.checkoutId || "-"}</td>
+            </tr>;
+          })}</tbody>
+        </table></div>
+      </section>
+    </AdminLayout>;
+  }
+
   if (path !== "") notFound();
   const [personalSetting] = await db.select().from(settings).where(eq(settings.key, "PERSONAL_MESSAGE")).limit(1);
   const [imageSetting] = await db.select().from(settings).where(eq(settings.key, "PROFILE_IMAGE")).limit(1);
@@ -147,12 +194,12 @@ export default async function AdminCatchAll({
   const allPayments = await db.select().from(payments);
   const paidUserIds = new Set(
     allPayments
-      .filter((payment) => (payment.status === "succeeded" || payment.status === "completed") && payment.paidAt)
+      .filter((payment) => payment.status === "succeeded" || payment.status === "completed")
       .flatMap((payment) => payment.userId ? [payment.userId] : [])
   );
   const paidEmails = new Set(
     allPayments
-      .filter((payment) => (payment.status === "succeeded" || payment.status === "completed") && payment.paidAt)
+      .filter((payment) => payment.status === "succeeded" || payment.status === "completed")
       .map((payment) => payment.email?.toLowerCase())
       .filter((email): email is string => Boolean(email))
   );
@@ -166,7 +213,7 @@ export default async function AdminCatchAll({
       </form>
     </section>
     <section className="admin-panel">
-      <div className="admin-panel-heading"><h2>Users</h2><Link href={`/${adminPath}/payments`}>View payment records</Link></div>
+      <div className="admin-panel-heading"><h2>Users</h2><Link href={`/${adminPath}/users`}>View all users →</Link></div>
       <div className="admin-table-wrap"><table className="admin-table">
         <thead><tr><th>Email</th><th>Joined</th><th>Payment</th></tr></thead>
         <tbody>{allUsers.map((user) => {

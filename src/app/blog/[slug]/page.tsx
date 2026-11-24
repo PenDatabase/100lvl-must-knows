@@ -58,7 +58,7 @@ export default async function Post({ params }: { params: Promise<{ slug: string 
   }
   const isFree = post.position <= 3;
   if (!isFree && !hasAccess) redirect("/pricing");
-  const nextHref = post.position === 3 ? "/pricing" : next ? `/blog/${next.slug}` : null;
+  const nextHref = next ? `/blog/${next.slug}` : null;
 
   return (
     <main className="wrap block article">
@@ -66,14 +66,6 @@ export default async function Post({ params }: { params: Promise<{ slug: string 
       <p className="kicker">Chapter {post.position}</p>
       <h1 className="h-sm">{post.title}</h1>
       <div className="markdown-content" dangerouslySetInnerHTML={{ __html: renderMarkdown(post.body) }} />
-
-      {!isFree && !hasAccess && (
-        <div className="gate">
-          <h2>This chapter is locked</h2>
-          <p>Chapters 1 to 3 are free. Chapter {post.position} is part of the paid series.</p>
-          <Link className="btn" href="/pricing">Unlock the paid series</Link>
-        </div>
-      )}
 
       <nav className="pager">
         {prev ? <Link className="pager-button pager-previous" href={`/blog/${prev.slug}`}>← Previous</Link> : <span className="pager-placeholder" />}

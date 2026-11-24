@@ -1,10 +1,13 @@
 import Link from "next/link";
 import { login } from "@/app/actions";
+import SiteNavbar from "@/components/SiteNavbar";
 
 export default async function Login({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
   const { error } = await searchParams;
   return (
-    <main className="admin-login">
+    <main>
+      <SiteNavbar />
+      <div className="admin-login">
       <section className="admin-card">
         <p className="kicker">Playbook account</p>
         <h1>Log in</h1>
@@ -18,6 +21,7 @@ export default async function Login({ searchParams }: { searchParams: Promise<{ 
         {error === "invalid" && <p className="err">Invalid email or password.</p>}
         <p className="admin-help"><Link href="/signup">Create an account</Link></p>
       </section>
+      </div>
     </main>
   );
 }

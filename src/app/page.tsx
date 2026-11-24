@@ -3,7 +3,7 @@ import { asc, lte } from "drizzle-orm";
 import { db } from "@/db";
 import { posts, settings } from "@/db/schema";
 import { BRAND, NAME } from "@/site";
-import { getCurrentUser, logout } from "@/app/actions";
+import SiteNavbar from "@/components/SiteNavbar";
 export const revalidate = 60;
 
 const proof = [
@@ -14,10 +14,7 @@ const proof = [
 ];
 
 export default async function Home() {
-  const [free, user] = await Promise.all([
-    db.select().from(posts).where(lte(posts.position, 3)).orderBy(asc(posts.position)),
-    getCurrentUser(),
-  ]);
+  const free = await db.select().from(posts).where(lte(posts.position, 3)).orderBy(asc(posts.position));
   const siteSettings = await db.select().from(settings);
   const setting = (key: string) => siteSettings.find((item) => item.key === key)?.value;
   const personalMessage = setting("PERSONAL_MESSAGE") ||
@@ -27,24 +24,7 @@ export default async function Home() {
   return (
     <main>
       <section className="hero">
-        <header className="nav wrap">
-          <Link className="brand" href="/">{BRAND}</Link>
-          <nav className="nav-actions" aria-label="Account navigation">
-            {user ? (
-              <>
-                <Link className="nav-link nav-link-accent" href="/pricing">Unlock full playbook</Link>
-                <form action={logout}>
-                  <button className="nav-link nav-link-button" type="submit">Log out</button>
-                </form>
-              </>
-            ) : (
-              <>
-                <Link className="nav-link nav-link-secondary" href="/login">Log in</Link>
-                <Link className="nav-link nav-link-accent" href="/signup">Sign up</Link>
-              </>
-            )}
-          </nav>
-        </header>
+        <SiteNavbar />
         <div className="hero-grid wrap">
           <div className="hero-copy">
             <h1>Win 100 level.<br /><span>For real.</span></h1>

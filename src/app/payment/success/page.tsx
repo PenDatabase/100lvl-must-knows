@@ -5,6 +5,7 @@ import { db } from "@/db";
 import { payments } from "@/db/schema";
 import { getCurrentUser } from "@/app/actions";
 import { log, logError } from "@/lib/logger";
+import SiteNavbar from "@/components/SiteNavbar";
 
 export const dynamic = "force-dynamic";
 
@@ -56,6 +57,7 @@ export default async function PaymentSuccess() {
 
   return (
     <main className="wrap block">
+      <SiteNavbar />
       <section className="price-card">
         <p className="kicker">Payment successful</p>
         <h1 className="h-sm">You&apos;re unlocked.</h1>
