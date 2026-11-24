@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { BRAND } from "@/site";
 import { getCurrentUser, startCheckout } from "@/app/actions";
@@ -11,7 +10,6 @@ export default async function Pricing({ searchParams }: { searchParams: Promise<
   return (
     <main className="wrap block pricing">
       <SiteNavbar />
-      <nav className="page-nav"><Link href="/blog" className="back">All chapters</Link></nav>
       <p className="kicker">You finished the free chapters</p>
       <h1 className="h-sm">Keep going.</h1>
       <p className="lede">

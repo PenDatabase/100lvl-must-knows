@@ -27,8 +27,8 @@
 }
 
 .nav-actions .nav-link-secondary {
-  background: transparent;
-  color: var(--paper);
+  background: var(--warm);
+  color: var(--ink);
 }
 
 .nav-actions .nav-link-button {

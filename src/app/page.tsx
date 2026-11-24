@@ -53,24 +53,12 @@ export default async function Home() {
         </div>
       </section>
 
-      <section className="playbook">
-        <div className="wrap">
-          <p className="section-kicker">The playbook</p>
-          <h2>Do these things first.</h2>
-          <div className="action-grid">
-            <article><span>01</span><h3>Own your grades</h3><p>Understand the system, build a weekly study plan and start every assessment prepared—not panicked.</p></article>
-            <article><span>02</span><h3>Build useful skills</h3><p>Do not collect certificates. Learn a skill, use it on real problems and leave 100 level with visible work.</p></article>
-            <article><span>03</span><h3>Become known</h3><p>Choose people carefully, contribute before you request attention and build relationships that outlast the semester.</p></article>
-          </div>
-        </div>
-      </section>
-
       <section className="chapters-section" id="chapters">
         <div className="wrap">
           <p className="section-kicker">Read in order</p>
           <h2>The first 3 chapters are free.</h2>
           <ol className="chapters">
-            {free.map((p) => <li key={p.id}><Link href={`/blog/${p.slug}`}><span className="num">{p.position}</span><span><b>{p.title}</b></span><span className="tag">Free</span></Link></li>)}
+            {free.map((p) => <li key={p.id}><Link href={`/blog/${p.slug}`}><span className="num">{p.position}</span><span><b>{p.title}</b></span></Link></li>)}
           </ol>
           <Link className="btn btn-accent" href="/blog">View all chapters</Link>
         </div>
