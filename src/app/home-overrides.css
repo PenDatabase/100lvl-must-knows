@@ -32,7 +32,7 @@
 }
 
 .nav-actions .nav-link-button {
-  font: inherit;
+  font-family: inherit;
   cursor: pointer;
   background: var(--warm);
   color: var(--ink);
