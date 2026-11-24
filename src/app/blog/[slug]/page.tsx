@@ -67,7 +67,7 @@ export default async function Post({ params }: { params: Promise<{ slug: string 
       <h1 className="h-sm">{post.title}</h1>
       <div className="markdown-content" dangerouslySetInnerHTML={{ __html: renderMarkdown(post.body) }} />
 
-      {!isFree && (
+      {!isFree && !hasAccess && (
         <div className="gate">
           <h2>This chapter is locked</h2>
           <p>Chapters 1 to 3 are free. Chapter {post.position} is part of the paid series.</p>
