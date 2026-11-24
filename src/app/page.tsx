@@ -2,7 +2,7 @@ import Link from "next/link";
 import { asc, lte } from "drizzle-orm";
 import { db } from "@/db";
 import { posts, settings } from "@/db/schema";
-import { BRAND, NAME } from "@/site";
+import { NAME } from "@/site";
 import SiteNavbar from "@/components/SiteNavbar";
 export const revalidate = 60;
 
@@ -71,7 +71,6 @@ export default async function Home() {
         </div>
       </section>
 
-      <footer><div className="wrap">{BRAND} by {NAME} · <Link href="/blog">All chapters</Link></div></footer>
     </main>
   );
 }

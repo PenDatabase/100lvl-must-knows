@@ -4,6 +4,7 @@ import { and, eq, inArray } from "drizzle-orm";
 import { db } from "@/db";
 import { payments, posts } from "@/db/schema";
 import { getCurrentUser } from "@/app/actions";
+import SiteNavbar from "@/components/SiteNavbar";
 import { renderMarkdown } from "@/lib/markdown";
 import { log, logError } from "@/lib/logger";
 
@@ -61,20 +62,22 @@ export default async function Post({ params }: { params: Promise<{ slug: string 
   const nextHref = next ? `/blog/${next.slug}` : null;
 
   return (
-    <main className="wrap block article">
-      <nav className="page-nav"><Link href="/blog" className="back">All chapters</Link></nav>
-      <p className="kicker">Chapter {post.position}</p>
-      <h1 className="h-sm">{post.title}</h1>
-      <div className="markdown-content" dangerouslySetInnerHTML={{ __html: renderMarkdown(post.body) }} />
+    <>
+      <SiteNavbar />
+      <main className="wrap block article">
+        <p className="kicker">Chapter {post.position}</p>
+        <h1 className="h-sm">{post.title}</h1>
+        <div className="markdown-content" dangerouslySetInnerHTML={{ __html: renderMarkdown(post.body) }} />
 
-      <nav className="pager">
-        {prev ? <Link className="pager-button pager-previous" href={`/blog/${prev.slug}`}>← Previous</Link> : <span className="pager-placeholder" />}
-        {nextHref && (
-          <Link className="pager-button pager-next" href={nextHref}>
-            {post.position === 3 ? "Continue to the paid series →" : "Next →"}
-          </Link>
-        )}
-      </nav>
-    </main>
+        <nav className="pager">
+          {prev ? <Link className="pager-button pager-previous" href={`/blog/${prev.slug}`}>← Previous</Link> : <span className="pager-placeholder" />}
+          {nextHref && (
+            <Link className="pager-button pager-next" href={nextHref}>
+              {post.position === 3 ? "Continue to the paid series →" : "Next →"}
+            </Link>
+          )}
+        </nav>
+      </main>
+    </>
   );
 }

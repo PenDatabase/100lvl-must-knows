@@ -47,6 +47,27 @@
   margin-top: 2rem;
 }
 
+.chapters a {
+  transition: background-color 0.15s, color 0.15s;
+}
+
+.chapters a:hover,
+.chapters a:focus-visible {
+  background: var(--acid);
+  color: var(--ink);
+}
+
+.chapters a:hover b,
+.chapters a:focus-visible b,
+.chapters a:hover .num,
+.chapters a:focus-visible .num,
+.chapters a:hover em,
+.chapters a:focus-visible em,
+.chapters a:hover .tag,
+.chapters a:focus-visible .tag {
+  color: var(--ink);
+}
+
 .admin-panel-heading {
   display: flex;
   align-items: center;
