@@ -9,8 +9,8 @@ export const revalidate = 60;
 const proof = [
   ["First Class", "and holding it"],
   ["Scholarship", "earned, not given"],
-  ["President", "CS & MIS Students' Association"],
-  ["Millions", "made by software I built"],
+  ["President", "Computer & Information Sciences Student Association"],
+  ["Millions", "processed by software I built"],
 ];
 
 export default async function Home() {
@@ -67,7 +67,7 @@ export default async function Home() {
       <section className="proof-story">
         <div className="wrap story-grid">
           <div><p className="section-kicker">Why listen</p><h2>Experience beats theory.</h2></div>
-          <p>I held a first class, earned a scholarship, led the CS & MIS Students' Association and built software that made millions. More importantly, I learned the repeatable actions behind those results. This is the practical side of what worked.</p>
+          <p>I held a first class, earned a scholarship, led the CS & MIS Students' Association (NACOS) and built software that processed millions. More importantly, I learned the repeatable actions behind those results. This is the practical side of what worked.</p>
         </div>
       </section>
 

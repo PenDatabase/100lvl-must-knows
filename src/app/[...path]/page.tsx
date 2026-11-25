@@ -100,7 +100,7 @@ export default async function AdminCatchAll({
   if (path === "chapters" || path === "chapters/") {
     return <AdminLayout adminPath={adminPath}>
       <Header title="Chapters" saved={resolvedSearchParams.saved} />
-      <div className="admin-actions"><Link className="btn" href={`/${adminPath}/chapters/new`}>Create chapter</Link></div>
+      <div className="admin-actions"><Link className="btn" href={`/${adminPath}/chapters/new`}>Create chapter +</Link></div>
       <section className="admin-panel">
         <div className="admin-table-wrap"><table className="admin-table">
           <thead><tr><th>Position</th><th>Title</th><th>Access</th><th>Actions</th></tr></thead>

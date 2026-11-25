@@ -14,7 +14,7 @@ const rows = [
     body: "How you got into the association.\n\nHow you ran for president.\n\nHow to meet the right people." },
   { slug: "build-skills-that-pay", title: "Stop Collecting Certificates. Build Things That Pay.",
     body: "Your first project.\n\nHow you went from code to money.\n\nWhat to build in your first year." },
-  { slug: "from-code-to-millions", title: "From Student Project to Software That Made Millions",
+  { slug: "from-simple-code-to-millions", title: "From Student Project to Software That Processed Millions",
     body: "The full story.\n\nMistakes to avoid.\n\nThe numbers." },
   { slug: "leading-people-at-19", title: "How To Lead People Older Than You",
     body: "Leadership lessons.\n\nHandling conflict.\n\nDelegating." },
