@@ -65,8 +65,10 @@ export default async function Post({ params }: { params: Promise<{ slug: string 
     <>
       <SiteNavbar />
       <main className="wrap block article">
-        <p className="kicker">Chapter {post.position}</p>
-        <h1 className="h-sm">{post.title}</h1>
+        <header className="article-header">
+          <p className="kicker">Chapter {post.position}</p>
+          <h1 className="h-sm">{post.title}</h1>
+        </header>
         <div className="markdown-content" dangerouslySetInnerHTML={{ __html: renderMarkdown(post.body) }} />
 
         <nav className="pager">

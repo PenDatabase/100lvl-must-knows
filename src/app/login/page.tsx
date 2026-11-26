@@ -5,7 +5,7 @@ import SiteNavbar from "@/components/SiteNavbar";
 export default async function Login({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
   const { error } = await searchParams;
   return (
-    <main>
+    <main className="auth-page">
       <SiteNavbar />
       <div className="admin-login">
       <section className="admin-card">
