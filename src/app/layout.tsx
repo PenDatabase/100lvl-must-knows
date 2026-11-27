@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Anton, Work_Sans } from "next/font/google";
 import "./globals.css";
 import "./home-overrides.css";
+import "./polish.css";
 import { BRAND, NAME } from "@/site";
 import SiteFooter from "@/components/SiteFooter";
 
